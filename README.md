@@ -1,8 +1,10 @@
 Political map generator implemented in vanilla javascript
 
-[Try it out here](https://coryleeio.github.io/political-map-generator/)
+This is a fork of the original: https://github.com/coryleeio/political-map-generator with the intention of adding post generation edition capabilities. 
 
-![Picture of Map Generator](https://github.com/coryleeio/political-map-generator/blob/assets/example.png)
+Big thanks to [Cory Lee]https://github.com/coryleeio for the work on the poc
+
+Original project thanks:
 
 Big thanks to [Amit Patel](http://www-cs-students.stanford.edu/~amitp/game-programming/polygon-map-generation/) at red blob games for his great article on polygonal map generation that inspired me to take on the project.
 
