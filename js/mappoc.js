@@ -25,7 +25,7 @@ var Map = {
     treemap: null,
     hoverColor: '#00ffff',
 
-    generate: function() {
+    generate: function () {
         // Guarantee starting state, since cells are re-used by the voronoi library.
         // and map object can be re-used via GUI.
         var mapframe = document.getElementById('voronoiCanvas');
@@ -42,17 +42,17 @@ var Map = {
         this.edgeCellObject = {};
         this.renderOnlyPolticalBounds = false;
         this.sites = [];
-        Voronoi.prototype.Cell.prototype.water=null;
-        Voronoi.prototype.Cell.prototype.plate=null;
+        Voronoi.prototype.Cell.prototype.water = null;
+        Voronoi.prototype.Cell.prototype.plate = null;
 
-        if(this.diagram!= null && this.diagram.cells != null) {
+        if (this.diagram != null && this.diagram.cells != null) {
             var cells = this.diagram.cells;
             for (i in this.diagram.cells) {
                 var cell = cells[i];
-                cell.water=null;
-                cell.zone=null;
+                cell.water = null;
+                cell.zone = null;
                 var halfEdges = cell.halfedges;
-                for(y in halfEdges) {
+                for (y in halfEdges) {
                     var halfEdge = halfEdges[y];
                     halfEdge.politicalBound = null;
                 }
@@ -73,108 +73,106 @@ var Map = {
         this.renderPoliticalView();
     },
 
-    saveImage: function() {
+    saveImage: function () {
         var image = this.canvas.toDataURL("image/png").replace("image/png", "image/octet-stream");  // here is the most important part because if you dont replace you will get a DOM 18 exception.
-        window.location.href=image; // it will save locally
+        window.location.href = image; // it will save locally
     },
 
-    assignWater: function() {
-        for( var zoneCounter = 0; zoneCounter < this.edgeZoneIds.length; zoneCounter++ ) {
+    assignWater: function () {
+        for (var zoneCounter = 0; zoneCounter < this.edgeZoneIds.length; zoneCounter++) {
             var waterRoll = this.randomIntegerInRange(0, 100);
-            if(waterRoll < this.chanceOfWater)
-            {
+            if (waterRoll < this.chanceOfWater) {
                 var zoneId = this.edgeZoneIds[zoneCounter];
                 var cellsInZone = this.zoneToContains[zoneId];
-                for( var cellCounter =0; cellCounter < cellsInZone.length; cellCounter++ ) {
+                for (var cellCounter = 0; cellCounter < cellsInZone.length; cellCounter++) {
                     var cellId = cellsInZone[cellCounter];
-                    var cell = this.getCellForId(cellId);
+                    var cell = this.getCell(cellId);
                     cell.water = true;
                 }
             }
         }
     },
 
-    assignPoliticalEdges: function() {
+    assignPoliticalEdges: function () {
         var cells = this.diagram.cells;
 
-        var compareZonesAndAssignPoliticalBounds = function( halfedge, cell, adjacentCell) {
-            if(cell.zone != adjacentCell.zone && !(cell.water == true && adjacentCell.water == true)) {
-                halfedge.politicalBound=true;
-            }else {
-                halfedge.politicalBound=false;
+        var compareZonesAndAssignPoliticalBounds = function (halfedge, cell, adjacentCell) {
+            if (cell.zone != adjacentCell.zone && !(cell.water == true && adjacentCell.water == true)) {
+                halfedge.politicalBound = true;
+            } else {
+                halfedge.politicalBound = false;
             }
         }
 
-        for ( i in cells ) {
+        for (i in cells) {
             var cell = cells[i];
             var cellId = cells[i].voronoiId;
             var halfEdges = cell.halfedges;
 
-            for(var k=0; k < halfEdges.length; k++) {
-                var lSite = halfEdges[k].edge.lSite;
-                var rSite = halfEdges[k].edge.rSite;
-                if(lSite != null && lSite.voronoiId != cellId) {
-                    var adjacentCell = this.getCellForId(lSite.voronoiId);
+            for (var k = 0; k < halfEdges.length; k++) {
+                var leftSite = halfEdges[k].edge.lSite;
+                var rightSite = halfEdges[k].edge.rSite;
+                if (leftSite != null && leftSite.voronoiId != cellId) {
+                    var adjacentCell = this.getCell(leftSite.voronoiId);
                     compareZonesAndAssignPoliticalBounds(halfEdges[k], cell, adjacentCell);
                 }
 
-                if(rSite != null && rSite.voronoiId != cellId) {
-                    var adjacentCell = this.getCellForId(rSite.voronoiId);
+                if (rightSite != null && rightSite.voronoiId != cellId) {
+                    var adjacentCell = this.getCell(rightSite.voronoiId);
                     compareZonesAndAssignPoliticalBounds(halfEdges[k], cell, adjacentCell);
                 }
             }
         }
     },
 
-    assignEdgeZones: function() {
+    assignEdgeZones: function () {
         var edgeCellIds = Object.keys(this.edgeCellObject);
-        for( var i = 0; i < edgeCellIds.length; i++ ) {
-            var cell = this.getCellForId(edgeCellIds[i]);
+        for (var i = 0; i < edgeCellIds.length; i++) {
+            var cell = this.getCell(edgeCellIds[i]);
 
             this.edgeZoneObject[cell.zone] = 1;
         }
         this.edgeZoneIds = Object.keys(this.edgeZoneObject);
     },
 
-    renderVoronoiView: function() {
+    renderVoronoiView: function () {
         this.renderOnlyPolticalBounds = false;
         this.renderMapBorder();
         this.setCellColors('#ffffff', '#333', '#ff0000');
         this.renderAllCells();
     },
 
-    assignZonePoliticalColors: function() {
-        for(var zoneNumber = 0; zoneNumber < this.numberOfZones; zoneNumber++) {
+    assignZonePoliticalColors: function () {
+        for (var zoneNumber = 0; zoneNumber < this.numberOfZones; zoneNumber++) {
             this.colorByZone[zoneNumber] = this.randomHexColor();
         }
     },
 
-    renderZoneView: function() {
+    renderZoneView: function () {
         this.renderMapBorder();
         this.setCellColors('#ffffff', '#333', '#ff0000');
         this.renderOnlyPolticalBounds = false;
 
-        for(var cellId=0; cellId < this.getCellCount(); cellId++ ) {
-            var cell = this.getCellForId( cellId );
-            if( cell != null && cell.zone != null ) {
+        for (var cellId = 0; cellId < this.getCellCount(); cellId++) {
+            var cell = this.getCell(cellId);
+            if (cell != null && cell.zone != null) {
                 cell.cellColor = this.colorByZone[cell.zone];
                 cell.siteColor = this.colorByZone[cell.zone];
             }
         }
         this.renderAllCells();
     },
-    renderGriddedPoliticalView: function() {
+    renderGriddedPoliticalView: function () {
         this.renderMapBorder();
         this.setCellColors(null, '#333', null);
         this.renderOnlyPolticalBounds = false;
 
-        for(var cellId=0; cellId < this.getCellCount(); cellId++ ) {
-            var cell = this.getCellForId( cellId );
-            if( cell != null && cell.zone != null ) {
+        for (var cellId = 0; cellId < this.getCellCount(); cellId++) {
+            var cell = this.getCell(cellId);
+            if (cell != null && cell.zone != null) {
                 cell.cellColor = this.colorByZone[cell.zone];
                 cell.siteColor = this.colorByZone[cell.zone];
-                if(cell.water == true)
-                {
+                if (cell.water == true) {
                     cell.cellColor = "#91D0EF";
                     cell.siteColor = "#91D0EF";
                     cell.edgeColor = null;
@@ -184,21 +182,19 @@ var Map = {
         this.renderAllCells();
     },
 
-    renderGriddedView: function() {
+    renderGriddedView: function () {
         this.renderMapBorder();
         this.setCellColors('#ffffff', '#333', '#ff0000');
         this.renderOnlyPolticalBounds = false;
 
-        for(var cellId=0; cellId < this.getCellCount(); cellId++ ) {
-            var cell = this.getCellForId( cellId );
-            if( cell != null && cell.zone != null ) {
-                if(cell.water == true)
-                {
+        for (var cellId = 0; cellId < this.getCellCount(); cellId++) {
+            var cell = this.getCell(cellId);
+            if (cell != null && cell.zone != null) {
+                if (cell.water == true) {
                     cell.cellColor = "#91D0EF";
                     cell.siteColor = "#91D0EF";
                 }
-                else
-                {
+                else {
                     cell.cellColor = this.colorByZone[cell.zone];
                     cell.siteColor = this.colorByZone[cell.zone];
                 }
@@ -207,18 +203,17 @@ var Map = {
         this.renderAllCells();
     },
 
-    renderPoliticalView: function() {
+    renderPoliticalView: function () {
         this.renderMapBorder();
         this.setCellColors(null, '#333', null);
         this.renderOnlyPolticalBounds = true;
 
-        for(var cellId=0; cellId < this.getCellCount(); cellId++ ) {
-            var cell = this.getCellForId( cellId );
-            if( cell != null && cell.zone != null ) {
+        for (var cellId = 0; cellId < this.getCellCount(); cellId++) {
+            var cell = this.getCell(cellId);
+            if (cell != null && cell.zone != null) {
                 cell.cellColor = this.colorByZone[cell.zone];
                 cell.siteColor = this.colorByZone[cell.zone];
-                if(cell.water == true)
-                {
+                if (cell.water == true) {
                     cell.cellColor = "#91D0EF";
                     cell.siteColor = "#91D0EF";
                 }
@@ -227,30 +222,30 @@ var Map = {
         this.renderAllCells();
     },
 
-    setCellColors: function(cellColor, edgeColor, siteColor) {
+    setCellColors: function (cellColor, edgeColor, siteColor) {
         var cells = this.diagram.cells;
-        for ( i in cells) {
+        for (i in cells) {
             var cell = cells[i];
-            if(cellColor != null) {
+            if (cellColor != null) {
                 cell.cellColor = cellColor;
             }
-            if(edgeColor != null) {
+            if (edgeColor != null) {
                 cell.edgeColor = edgeColor;
             }
-            if(siteColor != null) {
+            if (siteColor != null) {
                 cell.siteColor = siteColor;
             }
         }
     },
 
 
-    renderStainedGlassView: function() {
+    renderStainedGlassView: function () {
         this.renderMapBorder();
         this.renderOnlyPolticalBounds = false;
         this.setCellColors(null, '#333', null);
-        for(var cellId=0; cellId < this.getCellCount(); cellId++ ) {
-            var cell = this.getCellForId( cellId );
-            if( cell != null ) {
+        for (var cellId = 0; cellId < this.getCellCount(); cellId++) {
+            var cell = this.getCell(cellId);
+            if (cell != null) {
                 var color = this.randomHexColor();
                 cell.cellColor = color;
                 cell.siteColor = color;
@@ -259,77 +254,73 @@ var Map = {
         this.renderAllCells();
     },
 
-    renderAllCells: function() {
-        for (var i =0; i<this.getCellCount(); i++) {
+    renderAllCells: function () {
+        for (var i = 0; i < this.getCellCount(); i++) {
             this.renderCell(i);
         }
-        for (var i =0; i<this.getCellCount(); i++) {
+        for (var i = 0; i < this.getCellCount(); i++) {
             this.renderEdges(i);
         }
     },
 
-    assignZones: function() {
+    assignZones: function () {
         var zoneRootIds = this.selectZoneStartingCellIds();
         // Timeslice between multi-site random flood-fill.
         // Store nodes that might be valid expansion points here.
         var zoneToValidAdjacent = [];
         // while(this.zone()) {
-            var cellsAssigned = 0;
-            while(cellsAssigned < this.getCellCount())
-            {
-                for(var zoneNumber=0; zoneNumber < zoneRootIds.length; zoneNumber++) {
-                   // Unsure datastore is generateialized.
-                   if(zoneToValidAdjacent[zoneNumber] == null) {
-                        zoneToValidAdjacent[zoneNumber] = [];
-                   }
+        var cellsAssigned = 0;
+        while (cellsAssigned < this.getCellCount()) {
+            for (var zoneNumber = 0; zoneNumber < zoneRootIds.length; zoneNumber++) {
+                // Unsure datastore is generateialized.
+                if (zoneToValidAdjacent[zoneNumber] == null) {
+                    zoneToValidAdjacent[zoneNumber] = [];
+                }
 
-                   if(this.zoneToContains[zoneNumber] == null)
-                   {
-                        this.zoneToContains[zoneNumber] = [];
-                   }
+                if (this.zoneToContains[zoneNumber] == null) {
+                    this.zoneToContains[zoneNumber] = [];
+                }
 
-                   if(this.zoneToContains[zoneNumber].length == 0) {
-                        // Don't have a start node yet, get one
-                        var cellId = zoneRootIds[zoneNumber];
-                        this.getCellForId(cellId).zone = zoneNumber;
-                        cellsAssigned++;
-                        this.zoneToContains[zoneNumber].push(cellId);
-                        zoneToValidAdjacent[zoneNumber] = this.findAdjacentCells(cellId);
-                        continue;
-                   }
+                if (this.zoneToContains[zoneNumber].length == 0) {
+                    // Don't have a start node yet, get one
+                    var cellId = zoneRootIds[zoneNumber];
+                    this.getCell(cellId).zone = zoneNumber;
+                    cellsAssigned++;
+                    this.zoneToContains[zoneNumber].push(cellId);
+                    zoneToValidAdjacent[zoneNumber] = this.findAdjacentCells(cellId);
+                    continue;
+                }
 
-                   if(zoneToValidAdjacent[zoneNumber].length == 0)
-                   {
-                        // this zone is done growing
-                        continue;
-                   }
-                   var cellArrayIndexToTry = this.randomIntegerInRange(0, zoneToValidAdjacent[zoneNumber].length - 1);
-                   var cellIdToTry = zoneToValidAdjacent[zoneNumber][cellArrayIndexToTry];
-                   var cellId = cellIdToTry;
-                   var cell = this.getCellForId(cellId);
-                   if(cell.zone == null) {
-                        cell.zone = zoneNumber;
-                        cellsAssigned++;
-                        this.zoneToContains[zoneNumber].push(cellId);
-                        var adjacents = this.findAdjacentCells(cellId);
-                        zoneToValidAdjacent[zoneNumber] = this.mergeArray(zoneToValidAdjacent[zoneNumber], adjacents);
-                        
-                        for (value in this.zoneToContains[zoneNumber]) {
-                            zoneToValidAdjacent[zoneNumber] = zoneToValidAdjacent[zoneNumber].filter(function(element){
-                                return element !== value;
-                            }); // ensure no adjacent zone have already been added.
-                        }
-                   }
+                if (zoneToValidAdjacent[zoneNumber].length == 0) {
+                    // this zone is done growing
+                    continue;
+                }
+                var cellArrayIndexToTry = this.randomIntegerInRange(0, zoneToValidAdjacent[zoneNumber].length - 1);
+                var cellIdToTry = zoneToValidAdjacent[zoneNumber][cellArrayIndexToTry];
+                var cellId = cellIdToTry;
+                var cell = this.getCell(cellId);
+                if (cell.zone == null) {
+                    cell.zone = zoneNumber;
+                    cellsAssigned++;
+                    this.zoneToContains[zoneNumber].push(cellId);
+                    var adjacents = this.findAdjacentCells(cellId);
+                    zoneToValidAdjacent[zoneNumber] = this.mergeArray(zoneToValidAdjacent[zoneNumber], adjacents);
+
+                    for (value in this.zoneToContains[zoneNumber]) {
+                        zoneToValidAdjacent[zoneNumber] = zoneToValidAdjacent[zoneNumber].filter(function (element) {
+                            return element !== value;
+                        }); // ensure no adjacent zone have already been added.
+                    }
                 }
             }
+        }
         // }
     },
 
-    zone: function() {
+    zone: function () {
         var cells = this.diagram.cells;
-        for(x in cells) {
-            if(cells[x].zone == null)
-            {
+        for (x in cells) {
+            if (cells[x].zone == null) {
                 return true;
             }
         }
@@ -337,7 +328,7 @@ var Map = {
 
     // merge two arrays purging duplicates, 
     // this is lazy, no shame.
-    mergeArray: function(a, b) {
+    mergeArray: function (a, b) {
 
         var x = {};
         var res = [];
@@ -348,8 +339,7 @@ var Map = {
         }
 
         for (k in b) {
-            if(x[b[k]] == null)
-            {
+            if (x[b[k]] == null) {
                 res.push(b[k]);
                 x[b[k]] = 1;
             }
@@ -357,54 +347,53 @@ var Map = {
         return res;
     },
 
-    getCellForId: function(cellId) {
+    getCell: function (cellId) {
         return this.diagram.cells[cellId];
     },
 
-    findAdjacentCells: function(cellId) {
-        var cell = this.getCellForId(cellId);
+    findAdjacentCells: function (cellId) {
+        var cell = this.getCell(cellId);
         var halfEdges = cell.halfedges;
         var adjacents = [];
-        for(var k=0; k < halfEdges.length; k++) {
-            var lSite = halfEdges[k].edge.lSite;
-            var rSite = halfEdges[k].edge.rSite;
-            if(lSite != null && lSite.voronoiId != cellId) {
-                adjacents.push(lSite.voronoiId);
+        for (var k = 0; k < halfEdges.length; k++) {
+            var leftSite = halfEdges[k].edge.lSite;
+            var rightSite = halfEdges[k].edge.rSite;
+            if (leftSite != null && leftSite.voronoiId != cellId) {
+                adjacents.push(leftSite.voronoiId);
             }
-            else if(lSite == null) {
+            else if (leftSite == null) {
                 this.edgeCellObject[cellId] = 1;
             }
-            if(rSite != null && rSite.voronoiId != cellId) {
-                adjacents.push(rSite.voronoiId);
+            if (rightSite != null && rightSite.voronoiId != cellId) {
+                adjacents.push(rightSite.voronoiId);
             }
-            else if(rSite == null) {
+            else if (rightSite == null) {
                 this.edgeCellObject[cellId] = 1;
             }
         }
         return adjacents;
     },
 
-    compute: function(sites) {
+    compute: function (sites) {
         this.sites = sites;
         this.voronoi.recycle(this.diagram);
         this.diagram = this.voronoi.compute(sites, this.bbox);
         this.treemap = this.buildTreemap();
     },
 
-    inArray: function(array, value) {
+    inArray: function (array, value) {
         for (var i = 0; i < array.length; i++) {
             if (array[i] == value) return true;
         }
         return false;
     },
 
-    selectZoneStartingCellIds: function() {
+    selectZoneStartingCellIds: function () {
         var arr = [];
-        var i=0;
-        while(i < this.numberOfZones) {
-            var randomNumber = this.randomIntegerInRange(0,this.getCellCount() - 1);
-            if(!this.inArray(arr, randomNumber))
-            {
+        var i = 0;
+        while (i < this.numberOfZones) {
+            var randomNumber = this.randomIntegerInRange(0, this.getCellCount() - 1);
+            if (!this.inArray(arr, randomNumber)) {
                 arr.push(randomNumber);
                 i++;
             }
@@ -413,25 +402,25 @@ var Map = {
     },
 
     // Returns a random integer between min (inclusive) and max (inclusive)
-    randomIntegerInRange: function(min, max) {
+    randomIntegerInRange: function (min, max) {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     },
 
-    randomHexColor: function() {
-        var proposedHex = "#" + Math.floor((Math.abs(Math.sin(this.randomIntegerInRange(0,this.numberOfZones - 1 * 40)) * 16777215)) % 16777215).toString(16);
+    randomHexColor: function () {
+        var proposedHex = "#" + Math.floor((Math.abs(Math.sin(this.randomIntegerInRange(0, this.numberOfZones - 1 * 40)) * 16777215)) % 16777215).toString(16);
         var missingChars = 7 - proposedHex.length;
-        for ( var i = 0; i < missingChars; i++ ) {
+        for (var i = 0; i < missingChars; i++) {
             proposedHex += "0";
         }
 
         return proposedHex;
     },
 
-    clearSites: function() {
+    clearSites: function () {
         this.compute([]);
     },
 
-    randomSites: function(n, clear) {
+    randomSites: function (n, clear) {
         var sites = [];
         if (!clear) {
             sites = this.sites.slice(0);
@@ -454,11 +443,11 @@ var Map = {
         this.compute(sites);
     },
 
-    getCellCount: function() {
+    getCellCount: function () {
         return this.diagram.cells.length;
     },
 
-    relaxSites: function() {
+    relaxSites: function () {
         if (!this.diagram) {
             return;
         }
@@ -495,13 +484,13 @@ var Map = {
         this.compute(sites);
     },
 
-    distance: function(a, b) {
+    distance: function (a, b) {
         var dx = a.x - b.x,
             dy = a.y - b.y;
         return Math.sqrt(dx * dx + dy * dy);
     },
 
-    cellArea: function(cell) {
+    cellArea: function (cell) {
         var area = 0,
             halfedges = cell.halfedges,
             iHalfedge = halfedges.length,
@@ -518,7 +507,7 @@ var Map = {
         return area;
     },
 
-    cellCentroid: function(cell) {
+    cellCentroid: function (cell) {
         var x = 0,
             y = 0,
             halfedges = cell.halfedges,
@@ -540,7 +529,7 @@ var Map = {
         };
     },
 
-    buildTreemap: function() {
+    buildTreemap: function () {
         var treemap = new QuadTree({
             x: this.bbox.xl,
             y: this.bbox.yt,
@@ -557,7 +546,7 @@ var Map = {
         return treemap;
     },
 
-    cellUnderMouse: function(ev) {
+    cellUnderMouse: function (ev) {
         if (!this.diagram) {
             return;
         }
@@ -574,7 +563,7 @@ var Map = {
         if (ev.pageX || ev.pageY) {
             x = ev.pageX;
             y = ev.pageY;
-        } 
+        }
         else if (e.clientX || e.clientY) {
             x = ev.clientX + document.body.scrollLeft + document.documentElement
                 .scrollLeft;
@@ -586,23 +575,22 @@ var Map = {
         cellid = this.cellIdFromPoint(x, y);
 
         var str = "(" + x + "," + y + ") = " + cellid + "-- ";
-        if(cellid != null)
-        {
-            str += this.getCellForId(cellid).zone;
+        if (cellid != null) {
+            str += this.getCell(cellid).zone;
         }
         document.getElementById('voronoiCellId').innerHTML = str;
     },
 
-    cellIdFromPoint: function(x, y) {
+    cellIdFromPoint: function (x, y) {
         // We build the treemap on-demand
         if (this.treemap === null) {
             return;
         }
         // Get the Voronoi cells from the tree map given x,y
         var items = this.treemap.retrieve({
-                x: x,
-                y: y
-            }),
+            x: x,
+            y: y
+        }),
             iItem = items.length,
             cells = this.diagram.cells,
             cell, cellid;
@@ -617,33 +605,33 @@ var Map = {
         return undefined;
     },
 
-    renderCell: function(id) {
+    renderCell: function (id) {
         if (id === undefined) {
             return;
         }
         if (!this.diagram) {
             return;
         }
-        var cell = this.getCellForId(id);
+        var cell = this.getCell(id);
         if (!cell) {
             return;
         }
         this.renderCellWithColor(id, cell.cellColor, cell.edgeColor, cell.siteColor);
     },
 
-    renderEdges: function(id){
+    renderEdges: function (id) {
         if (id === undefined) {
             return;
         }
         if (!this.diagram) {
             return;
         }
-        var cell = this.getCellForId(id);
+        var cell = this.getCell(id);
         if (!cell) {
             return;
         }
 
-        if(cell.edgeColor == null) {
+        if (cell.edgeColor == null) {
             return;
         }
         var drawingContext = this.canvas.getContext('2d');
@@ -657,37 +645,36 @@ var Map = {
             var halfedge = halfedges[iHalfedge];
             var start = halfedges[iHalfedge].getStartpoint();
             var end = halfedges[iHalfedge].getEndpoint();
-            if(this.renderOnlyPolticalBounds == true) {
-                if(halfedge.politicalBound) {
+            if (this.renderOnlyPolticalBounds == true) {
+                if (halfedge.politicalBound) {
                     drawingContext.beginPath();
                     drawingContext.moveTo(start.x, start.y);
                     drawingContext.lineTo(end.x, end.y);
                     drawingContext.strokeStyle = cell.edgeColor;
                     drawingContext.fillStyle = cell.edgeColor;
-                    drawingContext.lineWidth=2;
+                    drawingContext.lineWidth = 2;
                     drawingContext.stroke();
                 }
             }
-            else if(this.renderOnlyPolticalBounds == false)
-            {
+            else if (this.renderOnlyPolticalBounds == false) {
                 drawingContext.beginPath();
                 drawingContext.moveTo(start.x, start.y);
                 drawingContext.lineTo(end.x, end.y);
                 drawingContext.strokeStyle = cell.edgeColor;
-                drawingContext.lineWidth=1;
+                drawingContext.lineWidth = 1;
                 drawingContext.stroke();
             }
         }
     },
 
-    renderCellWithColor: function(id, cellColor, edgeColor, siteColor) {
+    renderCellWithColor: function (id, cellColor, edgeColor, siteColor) {
         if (id === undefined) {
             return;
         }
         if (!this.diagram) {
             return;
         }
-        var cell = this.getCellForId(id);
+        var cell = this.getCell(id);
         if (!cell) {
             return;
         }
@@ -701,15 +688,15 @@ var Map = {
 
         // cell body
         drawingContext.moveTo(v.x, v.y);
-        for (var iHalfedge = 0; iHalfedge < nHalfedges; iHalfedge++) {
-            v = halfedges[iHalfedge].getEndpoint();
+        for (var index = 0; index < nHalfedges; index++) {
+            v = halfedges[index].getEndpoint();
             drawingContext.lineTo(v.x, v.y);
         }
         drawingContext.strokeStyle = cellColor;
         drawingContext.fillStyle = cellColor;
         drawingContext.fill();
         drawingContext.stroke();
-        
+
         // site
         v = cell.site;
         drawingContext.fillStyle = siteColor;
@@ -718,7 +705,7 @@ var Map = {
         drawingContext.fill();
     },
 
-    renderMapBorder: function() {
+    renderMapBorder: function () {
         var drawingContext = this.canvas.getContext('2d');
         // background
         drawingContext.globalAlpha = 1;
@@ -731,28 +718,28 @@ var Map = {
     }
 };
 
-window.onload = function() {
-  var map = Map;
-  map.generate();
+window.onload = function () {
+    var map = Map;
+    map.generate();
 
 
-  var gui = new dat.GUI();
-  gui.add(map, 'numberOfSites', 15, 8000);
-  gui.add(map, 'chanceOfWater', 0, 100);
-  gui.add(map, 'numberOfZones', 4, 200);
-  gui.add(map, 'consistency', 0, 30);
-  gui.add(map, 'generate');
-  gui.add(map, 'saveImage');
-  gui.add(map, 'xsize',300,1920);
-  gui.add(map, 'ysize',600,1080);
-  var viewFolder = gui.addFolder('Alternate Views');
-  viewFolder.add(map, 'renderVoronoiView');
-  viewFolder.add(map, 'renderStainedGlassView');
-  viewFolder.add(map, 'renderZoneView');
-  viewFolder.add(map, 'renderGriddedView');
-  viewFolder.add(map, 'renderGriddedPoliticalView');
-  viewFolder.add(map, 'renderPoliticalView');
-  viewFolder.open();
+    var gui = new dat.GUI();
+    gui.add(map, 'numberOfSites', 15, 8000);
+    gui.add(map, 'chanceOfWater', 0, 100);
+    gui.add(map, 'numberOfZones', 4, 200);
+    gui.add(map, 'consistency', 0, 30);
+    gui.add(map, 'generate');
+    gui.add(map, 'saveImage');
+    gui.add(map, 'xsize', 300, 1920);
+    gui.add(map, 'ysize', 600, 1080);
+    var viewFolder = gui.addFolder('Alternate Views');
+    viewFolder.add(map, 'renderVoronoiView');
+    viewFolder.add(map, 'renderStainedGlassView');
+    viewFolder.add(map, 'renderZoneView');
+    viewFolder.add(map, 'renderGriddedView');
+    viewFolder.add(map, 'renderGriddedPoliticalView');
+    viewFolder.add(map, 'renderPoliticalView');
+    viewFolder.open();
 };
 
-window.onmousemove=Map.cellUnderMouse.bind(Map);
+window.onmousemove = Map.cellUnderMouse.bind(Map);
