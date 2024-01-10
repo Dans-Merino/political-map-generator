@@ -13,6 +13,7 @@ var Map = {
     edgeCellObject: {},
     chanceOfWater: 70,
     renderOnlyPolticalBounds: false,
+    seed: "hello.",
     bbox: {
         xl: 0,
         xr: 1000,
@@ -44,6 +45,8 @@ var Map = {
         this.sites = [];
         Voronoi.prototype.Cell.prototype.water = null;
         Voronoi.prototype.Cell.prototype.plate = null;
+        Math.seedrandom(this.seed);
+
 
         if (this.diagram != null && this.diagram.cells != null) {
             var cells = this.diagram.cells;
@@ -728,6 +731,7 @@ window.onload = function () {
     gui.add(map, 'chanceOfWater', 0, 100);
     gui.add(map, 'numberOfZones', 4, 200);
     gui.add(map, 'consistency', 0, 30);
+    gui.add(map, 'seed');
     gui.add(map, 'generate');
     gui.add(map, 'saveImage');
     gui.add(map, 'xsize', 300, 1920);
